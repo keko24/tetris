@@ -2,7 +2,7 @@ import { Component, ViewChild, ElementRef, OnInit, HostListener } from '@angular
 import { BoardService } from '../board.service';
 import { ROWS, COLS, BLOCK_SIZE, KEYS } from '../global-constants';
 import { Piece } from '../piece';
-import {PieceInterface} from '../pieces';
+import { PieceInterface } from '../pieces';
 
 @Component({
   selector: 'app-board',
@@ -10,7 +10,7 @@ import {PieceInterface} from '../pieces';
   styleUrls: ['./board.component.css']
 })
 
-export class BoardComponent {
+export class BoardComponent implements OnInit {
     @ViewChild('board', { static: true }) 
     canvas!: ElementRef<HTMLCanvasElement>;
 
@@ -40,30 +40,44 @@ export class BoardComponent {
         this.ctx.canvas.height = ROWS * BLOCK_SIZE;
         this.ctx.scale(BLOCK_SIZE, BLOCK_SIZE);
     }
-    
-    startGame() {
-        this.board = this.boardService.getEmptyBoard();
+
+    setNewPiece(): void {
         this.piece = new Piece(this.ctx);
         this.piece.draw();
     }
-
-    isInsideWalls(x: number) {
-        return x >= 0 && x < COLS;
+    
+    startGame(): void {
+        this.board = this.boardService.setEmptyBoard();
+        this.setNewPiece();
     }
 
-    isAboveFloor(y: number) {
-        return y < ROWS;
+    isInsideWalls(x: number, y: number): boolean {
+        return x >= 0 && x < COLS && this.board[y][x] === 0;
+    }
+
+    isAboveFloor(x: number, y: number): boolean {
+        return y < ROWS && this.board[y][x] === 0;
+    }
+
+    isOnFloor(x: number, y: number): boolean {
+        return y === ROWS - 1 || this.board[y][x] > 0;
     }
 
     isValid(p: PieceInterface): boolean {
-        p.shape.forEach((row, y) => {
-            row.forEach((value, x) => {
-                if (value > 0 && !(this.isAboveFloor(p.y + y) && this.isInsideWalls(p.x + x))) {
-                    return false;
-                }
-            });
-        });
-        return true;
+        return p.shape.every((row, y) => 
+            row.every((value, x) => 
+                (value <= 0) || 
+                (value > 0 && this.isAboveFloor(p.x + x, p.y + y) && this.isInsideWalls(p.x + x, p.y + y))
+            )
+        );
+    }
+
+    isAtBottom(): boolean {
+        return this.piece.shape.some((row, y) => 
+            row.some((value, x) => 
+                value > 0 && this.isOnFloor(this.piece.x + x, this.piece.y + y)
+            )
+        );
     }
 
     @HostListener('window:keydown', ['$event'])
@@ -71,10 +85,15 @@ export class BoardComponent {
         if (this.moves[event.code]) {
             event.preventDefault();
             const new_position = this.moves[event.code](this.piece);
+            console.log(this.isValid(new_position));
             if (this.isValid(new_position)) {
                 this.piece.clear();
                 this.piece.move(new_position);
                 this.piece.draw();
+                if (this.isAtBottom()) {
+                    this.board = this.boardService.setPiece(this.piece);
+                    this.setNewPiece();
+                }
             }
         }
         else if (event.code === 'Space') {

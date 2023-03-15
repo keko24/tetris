@@ -48,12 +48,15 @@ export class Piece implements PieceInterface {
     }
 
     rotate(): void {
-        for (let i = 0; i < 2; i++) {
-            let temp = this.shape[0][i];
-            this.shape[0][i] = this.shape[2][i];
-            this.shape[2][i] = this.shape[2][2 - i];
-            this.shape[2][2 - i] = this.shape[0][2 - i];
-            this.shape[0][2 - i] = temp;
-        }
+        let temp = this.shape[0][0];
+        this.shape[0][0] = this.shape[2][0];
+        this.shape[2][0] = this.shape[2][2];
+        this.shape[2][2] = this.shape[0][2];
+        this.shape[0][2] = temp;
+        temp = this.shape[0][1];
+        this.shape[0][1] = this.shape[1][0];
+        this.shape[1][0] = this.shape[2][1];
+        this.shape[2][1] = this.shape[1][2];
+        this.shape[1][2] = temp;
     }
 }
