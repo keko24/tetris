@@ -1,5 +1,12 @@
-<div>
-    <canvas id="board">
-        <app-piece></app-piece>
-    </canvas>
+<div id="grid">
+    <canvas #board id="board"></canvas>
+    <div class="score-board">
+        <div>
+            <h1>Tetris</h1>
+            <p>Score: {{score}}</p>
+            <p>Lines: {{lines}}</p>
+            <p>Level: {{level}}</p>
+        </div>
+        <button (click)="startGame()" type="button" id="play-button">Play!</button>
+    </div>
 </div>

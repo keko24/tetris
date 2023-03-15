@@ -1,6 +1,8 @@
-import { Component, OnInit } from '@angular/core';
-import { ROWS, COLS, BLOCK_SIZE } from '../global-constants';
-import { PieceComponent } from '../piece/piece.component';
+import { Component, ViewChild, ElementRef, OnInit, HostListener } from '@angular/core';
+import { BoardService } from '../board.service';
+import { ROWS, COLS, BLOCK_SIZE, KEYS } from '../global-constants';
+import { Piece } from '../piece';
+import {PieceInterface} from '../pieces';
 
 @Component({
   selector: 'app-board',
@@ -9,28 +11,77 @@ import { PieceComponent } from '../piece/piece.component';
 })
 
 export class BoardComponent {
-    canvas: HTMLCanvasElement | undefined;
-    ctx: CanvasRenderingContext2D | undefined;
+    @ViewChild('board', { static: true }) 
+    canvas!: ElementRef<HTMLCanvasElement>;
 
-    constuctor() {}
+    ctx!: CanvasRenderingContext2D;
+    score!: number;
+    lines!: number;
+    level!: number;
 
-    getCanvas(): HTMLCanvasElement {
-        return document.getElementById("board")! as HTMLCanvasElement;
-    }
+    board!: number[][];
+    piece!: Piece;
 
-    getContext(): CanvasRenderingContext2D {
-        const ctx = this.canvas?.getContext('2d')!;
-        ctx.canvas.width = BLOCK_SIZE * COLS;
-        ctx.canvas.height = BLOCK_SIZE * ROWS;
-        ctx.scale(BLOCK_SIZE, BLOCK_SIZE);
-        return ctx;
-    }
+    moves = {
+        [KEYS.LEFT]: (p: PieceInterface): PieceInterface => ({...p, x: p.x - 1 }),
+        [KEYS.RIGHT]: (p: PieceInterface): PieceInterface => ({...p, x: p.x + 1 }),
+        [KEYS.DOWN]: (p: PieceInterface): PieceInterface => ({...p, y: p.y + 1 })
+    };
 
-    drawPiece(): void {
-    }
+    constructor(private boardService: BoardService) {}
 
     ngOnInit() {
-        this.canvas = this.getCanvas();
-        this.ctx = this.getContext();
+        this.setEmptyBoard();
+    }
+
+    setEmptyBoard(): void {
+        this.ctx = this.canvas.nativeElement.getContext('2d')!;
+        this.ctx.canvas.width = COLS * BLOCK_SIZE;
+        this.ctx.canvas.height = ROWS * BLOCK_SIZE;
+        this.ctx.scale(BLOCK_SIZE, BLOCK_SIZE);
+    }
+    
+    startGame() {
+        this.board = this.boardService.getEmptyBoard();
+        this.piece = new Piece(this.ctx);
+        this.piece.draw();
+    }
+
+    isInsideWalls(x: number) {
+        return x >= 0 && x < COLS;
+    }
+
+    isAboveFloor(y: number) {
+        return y < ROWS;
+    }
+
+    isValid(p: PieceInterface): boolean {
+        p.shape.forEach((row, y) => {
+            row.forEach((value, x) => {
+                if (value > 0 && !(this.isAboveFloor(p.y + y) && this.isInsideWalls(p.x + x))) {
+                    return false;
+                }
+            });
+        });
+        return true;
+    }
+
+    @HostListener('window:keydown', ['$event'])
+    handleKeyDown(event: KeyboardEvent) {
+        if (this.moves[event.code]) {
+            event.preventDefault();
+            const new_position = this.moves[event.code](this.piece);
+            if (this.isValid(new_position)) {
+                this.piece.clear();
+                this.piece.move(new_position);
+                this.piece.draw();
+            }
+        }
+        else if (event.code === 'Space') {
+            event.preventDefault();
+            this.piece.clear();
+            this.piece.rotate();
+            this.piece.draw();
+        }
     }
 }
