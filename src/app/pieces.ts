@@ -6,6 +6,7 @@ export interface PieceInterface {
 }
 
 export const PIECES = [
+    [],
     [[0, 0, 0],
      [1, 1, 1],
      [0, 0, 0]
@@ -35,4 +36,4 @@ export const PIECES = [
      [0, 7, 7]
     ],
 ];
-export const PIECE_COLOR = ['cyan', 'blue', 'orange', 'yellow', 'green', 'purple', 'red', 'white'];
+export const PIECE_COLOR = ['white', 'cyan', 'blue', 'orange', 'yellow', 'green', 'purple', 'red'];

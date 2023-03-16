@@ -19,7 +19,6 @@ export class BoardComponent implements OnInit {
     lines!: number;
     level!: number;
 
-    board!: number[][];
     piece!: Piece;
 
     moves = {
@@ -47,32 +46,36 @@ export class BoardComponent implements OnInit {
     }
     
     startGame(): void {
-        this.board = this.boardService.setEmptyBoard();
+        this.setEmptyBoard();
+        this.boardService.setEmptyBoard();
         this.setNewPiece();
     }
 
-    draw(): void {
+    clearLines(): void {
+        let value;
         this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
-        this.board.forEach((row, y) => {
-            row.forEach((value, x) => {
+        for (let row = 0; row < ROWS; row++) {
+            for (let col = 0; col < COLS; col++) {
+                value = this.boardService.getValueAtPosition(row, col);
+                console.log(value);
                 if (value > 0) {
-                    this.ctx.fillStyle = PIECE_COLOR[value - 1];
-                    this.ctx.fillRect(x, y, 1, 1);
+                    this.ctx.fillStyle = PIECE_COLOR[value];
+                    this.ctx.fillRect(col, row, 1, 1);
                 }
-            });
-        });
+            }
+        }
     }
 
-    isInsideWalls(x: number, y: number): boolean {
-        return x >= 0 && x < COLS && this.board[y][x] === 0;
+    isInsideWalls(col: number, row: number): boolean {
+        return col >= 0 && col < COLS && this.boardService.getValueAtPosition(row, col) === 0;
     }
 
-    isAboveFloor(x: number, y: number): boolean {
-        return y < ROWS && this.board[y][x] === 0;
+    isAboveFloor(col: number, row: number): boolean {
+        return row < ROWS && this.boardService.getValueAtPosition(row, col) === 0;
     }
 
-    isOnFloor(x: number, y: number): boolean {
-        return y === ROWS - 1 || this.board[y + 1][x] > 0;
+    isOnFloor(col: number, row: number): boolean {
+        return row === ROWS - 1 || this.boardService.getValueAtPosition(row + 1, col) > 0;
     }
 
     isValid(p: PieceInterface): boolean {
@@ -104,8 +107,9 @@ export class BoardComponent implements OnInit {
                 if (this.isAtBottom(new_position)) {
                     this.boardService.setPiece(new_position);
                     this.setNewPiece();
-                    this.board = this.boardService.checkLines();
-                    this.draw();
+                    if (this.boardService.checkLines()) {
+                        this.clearLines();
+                    }
                 }
             }
         }

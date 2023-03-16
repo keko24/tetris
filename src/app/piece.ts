@@ -13,7 +13,7 @@ export class Piece implements PieceInterface {
     }
 
     spawn(): void {
-        this.number = Math.floor(Math.random() * NUM_OF_PIECES);
+        this.number = Math.floor(Math.random() * NUM_OF_PIECES) + 1;
         this.color = PIECE_COLOR[this.number];
         this.shape = PIECES[this.number];
 
