@@ -2,7 +2,7 @@ import { Component, ViewChild, ElementRef, OnInit, HostListener } from '@angular
 import { BoardService } from '../board.service';
 import { ROWS, COLS, BLOCK_SIZE, KEYS } from '../global-constants';
 import { Piece } from '../piece';
-import { PieceInterface } from '../pieces';
+import { PIECE_COLOR, PieceInterface } from '../pieces';
 
 @Component({
   selector: 'app-board',
@@ -51,6 +51,18 @@ export class BoardComponent implements OnInit {
         this.setNewPiece();
     }
 
+    draw(): void {
+        this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+        this.board.forEach((row, y) => {
+            row.forEach((value, x) => {
+                if (value > 0) {
+                    this.ctx.fillStyle = PIECE_COLOR[value - 1];
+                    this.ctx.fillRect(x, y, 1, 1);
+                }
+            });
+        });
+    }
+
     isInsideWalls(x: number, y: number): boolean {
         return x >= 0 && x < COLS && this.board[y][x] === 0;
     }
@@ -60,7 +72,7 @@ export class BoardComponent implements OnInit {
     }
 
     isOnFloor(x: number, y: number): boolean {
-        return y === ROWS - 1 || this.board[y][x] > 0;
+        return y === ROWS - 1 || this.board[y + 1][x] > 0;
     }
 
     isValid(p: PieceInterface): boolean {
@@ -72,10 +84,10 @@ export class BoardComponent implements OnInit {
         );
     }
 
-    isAtBottom(): boolean {
-        return this.piece.shape.some((row, y) => 
+    isAtBottom(p: PieceInterface): boolean {
+        return p.shape.some((row, y) => 
             row.some((value, x) => 
-                value > 0 && this.isOnFloor(this.piece.x + x, this.piece.y + y)
+                value > 0 && this.isOnFloor(p.x + x, p.y + y)
             )
         );
     }
@@ -85,14 +97,15 @@ export class BoardComponent implements OnInit {
         if (this.moves[event.code]) {
             event.preventDefault();
             const new_position = this.moves[event.code](this.piece);
-            console.log(this.isValid(new_position));
             if (this.isValid(new_position)) {
                 this.piece.clear();
                 this.piece.move(new_position);
                 this.piece.draw();
-                if (this.isAtBottom()) {
-                    this.board = this.boardService.setPiece(this.piece);
+                if (this.isAtBottom(new_position)) {
+                    this.boardService.setPiece(new_position);
                     this.setNewPiece();
+                    this.board = this.boardService.checkLines();
+                    this.draw();
                 }
             }
         }
